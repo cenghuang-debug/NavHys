@@ -1,0 +1,95 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Non-reacting H2/air mixture — Hecht & Panda (2019) cryogenic dispersion.
+//
+// H2  : para-H2, degree-7 polynomial fit to CoolProp 'parahydrogen'
+//        (Leachman et al. 2009 EOS) over 50–350 K.
+//        Max fit error 0.93% at 50 K; mean error 0.19%.
+//        h = 0 at Tref = 298.15 K (Href = 0).
+// air : degree-7 polynomial fit to GRI3.0 JANAF data over 50–350 K.
+//        Max fit error 0.001%; Cp is nearly constant over this range.
+// transport : Sutherland viscosity for both species.
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            heRhoThermo;
+    mixture         multiComponentMixture;
+    transport       sutherland;
+    thermo          hPolynomial;
+    energy          sensibleEnthalpy;
+    equationOfState perfectGas;
+    specie          specie;
+}
+
+species
+(
+    H2
+    air
+);
+
+inertSpecie air;
+
+// ─── H2 : para-hydrogen ──────────────────────────────────────────────────────
+// Degree-7 polynomial Cp(T) fitted to CoolProp parahydrogen data, 50–350 K.
+// Coefficients in ascending power of T: Cp = a0 + a1*T + a2*T^2 + ...
+H2
+{
+    specie
+    {
+        molWeight       2.01588;
+    }
+    thermodynamics
+    {
+        Hf              0;
+        Sf              0;
+        CpCoeffs<8>     ( 2.794912e+04 -8.466487e+02  1.459633e+01 -1.115357e-01
+                          4.402859e-04 -9.131228e-07  8.928426e-10 -2.725380e-13 );
+    }
+    transport
+    {
+        // mu(50 K) ≈ 1.66 µPa·s vs NIST 1.72 µPa·s (~3% error)
+        As              6.897e-07;
+        Ts              97;
+    }
+}
+
+// ─── air : dry air ────────────────────────────────────────────────────────────
+// Degree-7 polynomial Cp(T) fitted to GRI3.0 JANAF data, 50–350 K.
+// Cp is nearly constant (~986–1016 J/kg/K); max fit error 0.001%.
+air
+{
+    specie
+    {
+        molWeight       28.850334;
+    }
+    thermodynamics
+    {
+        Hf              0;
+        Sf              0;
+        CpCoeffs<8>     ( 9.799012e+02  1.380391e-01 -2.821240e-04  4.572188e-07
+                          9.936515e-10 -4.392397e-12  7.693694e-15 -5.613725e-18 );
+    }
+    transport
+    {
+        // Frank White 2006, 190–2000 K
+        As              1.459e-06;
+        Ts              111;
+    }
+}
+
+// ************************************************************************* //

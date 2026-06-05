@@ -1,0 +1,33 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// Centerline profile: T, H2 mass fraction along jet axis (r=0, z=0..140mm).
+
+type            sets;
+libs            (sampling);
+
+writeControl    writeTime;
+
+interpolationScheme cellPoint;
+
+setFormat       raw;
+
+sets
+{
+    centerline
+    {
+        type    lineUniform;
+        axis    z;
+        start   (1e-7 0 0.001);     // just off z=0 to avoid inlet face
+        end     (1e-7 0 0.139);
+        nPoints 500;
+    }
+}
+
+fields ( T H2 U );
+
+// ************************************************************************* //

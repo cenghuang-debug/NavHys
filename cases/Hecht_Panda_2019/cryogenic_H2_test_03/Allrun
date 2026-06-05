@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#cd ${0%/*} || exit 1                        # Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
+
+# Clean previous run artifacts so subsetMesh finds no field files to subset
+rm -rf 0 constant/polyMesh
+
+# Step 1: build base mesh
+blockMesh > log.blockMesh & wait
+
+# Step 2: carve out nozzle stub geometry (mesh only — no 0/ yet)
+topoSet -dict system/topoSetDict_new_domain > log.topoSetDict_new_domain & wait
+subsetMesh -overwrite new_domain -patch internalWalls > log.subsetMesh & wait
+
+# Step 3: split inlet into fuel / air patches
+topoSet -dict system/topoSetDict_inlets > log.topoSetDict_inlets & wait
+createPatch -overwrite > log.createPatch & wait
+
+sed -i '50s/empty/wall/' constant/polyMesh/boundary
+sed -i '51s/empty/wall/' constant/polyMesh/boundary
+
+# Step 4: populate field files now that patches are finalised
+cp -r 0.orig/ 0/
+echo "checkMesh"
+checkMesh > log.checkMesh & wait 
+renumberMesh -overwrite > log.renumberMesh & wait
+#potentialFoam > log.potentialFoam & wait  # not suitable for compressible buoyant jet
+#rhoReactingBuoyantFoam > log.rhoReactingBuoyantFoam & wait
+
+#------------------------------------------------------------------------------

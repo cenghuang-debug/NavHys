@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      epsilon;
+}
+// Inlet: effectively zero (Giannissi 2021).
+// Ambient: eps = Cmu^(3/4)*k^(3/2)/L, L~0.05m.
+
+dimensions      [0 2 -3 0 0 0 0];
+
+internalField   uniform 9.03e-6;
+
+boundaryField
+{
+    inlet_air
+    {
+        type            inletOutlet;
+        inletValue      $internalField;
+        value           $internalField;
+    }
+    wallPipe
+    {
+        type            inletOutlet;
+        inletValue      $internalField;
+        value           $internalField;
+    }
+    internalWalls
+    {
+        type            epsilonWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        value           $internalField;
+    }
+    inlet_fuel
+    {
+        type            turbulentMixingLengthDissipationRateInlet;
+        mixingLength    7e-5;    // 0.07 * D_nn = 0.07 * 1e-3 m (Test 1, unchoked)
+        phi             phi;
+        k               k;
+        value           $internalField;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      $internalField;
+        value           $internalField;
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+}
+
+// ************************************************************************* //

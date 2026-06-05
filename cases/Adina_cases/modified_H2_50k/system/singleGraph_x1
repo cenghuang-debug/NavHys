@@ -1,0 +1,28 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+singleGraph_x1
+{
+    start   (0 0 0.1);
+    end     (0.45 0 0.1);
+//    fields  (H2 Qdot T U.component(2));
+    fields  (H2 Qdot T U);
+
+    #includeEtc "caseDicts/postProcessing/graphs/sampleDict.cfg"
+
+    setConfig
+    {
+        axis    x;
+    }
+
+    // Must be last entry
+    #includeEtc "caseDicts/postProcessing/graphs/graph.cfg"
+}
+
+
+// ************************************************************************* //

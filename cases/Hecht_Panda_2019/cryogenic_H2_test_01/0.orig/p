@@ -1,0 +1,52 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Absolute pressure solved directly by reactingFoam (no p_rgh splitting).
+// Inlet/walls: zeroGradient (velocity-driven); outlet: fixedValue at ambient.
+
+dimensions      [1 -1 -2 0 0 0 0];
+
+internalField   uniform 101325;
+
+boundaryField
+{
+    nozzleInlet
+    {
+        type            zeroGradient;
+    }
+    nozzleWall
+    {
+        type            zeroGradient;
+    }
+    bottomWall
+    {
+        type            zeroGradient;
+    }
+    outlet
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+    axis
+    {
+        type            symmetry;
+    }
+}
+
+// ************************************************************************* //

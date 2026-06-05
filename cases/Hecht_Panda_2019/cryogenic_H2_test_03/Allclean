@@ -1,0 +1,12 @@
+#!/bin/sh
+rm -rf 0.0*
+rm -rf VTK
+rm -rf constant/extendedFeatureEdgeMesh/
+rm -rf constant/polyMesh/
+rm -rf postProcessing
+rm -rf dynamicCode
+rm log.*
+
+
+
+#------------------------------------------------------------------------------

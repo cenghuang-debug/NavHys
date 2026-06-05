@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "meshParameters"
+
+// Region 1: annular hole beside the nozzle stub
+//   r = radius_fuel .. radius_fuel + hole_width,  z = 0 .. z_stub + hole_length
+hole_depth  #calc "$z_stub + $hole_length";
+
+// Region 2: core inside the nozzle tube
+//   r = 0 .. radius_fuel,  z = 0 .. z_stub
+core_depth  #calc "$z_stub";
+
+// Wedge coordinates
+hAR        #calc "degToRad($halfWedgeAngle)";
+
+hole_xmin  #calc "$radius_fuel * cos($hAR)";
+hole_xmax  #calc "($radius_fuel + $hole_width) * cos($hAR)";
+hole_ymax  #calc "$radius_fuel * sin($hAR)";
+hole_ymin  #calc "-$hole_ymax";
+
+core_xmax  #calc "$radius_fuel * cos($hAR)";
+core_ymax  #calc "$radius_fuel * sin($hAR)";
+core_ymin  #calc "-$core_ymax";
+
+actions
+(
+    // Start set with annular hole beside nozzle
+    {
+        name    new_domain;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        sourceInfo
+        {
+            box ($hole_xmin $hole_ymin 0) ($hole_xmax $hole_ymax $hole_depth);
+        }
+    }
+    // Add core region inside nozzle tube (r=0..radius_fuel, z=0..z_stub)
+    {
+        name    new_domain;
+        type    cellSet;
+        action  add;
+        source  boxToCell;
+        sourceInfo
+        {
+            box (0 $core_ymin 0) ($core_xmax $core_ymax $core_depth);
+        }
+    }
+    // Invert: keep everything outside both removed regions
+    {
+        name    new_domain;
+        type    cellSet;
+        action  invert;
+    }
+);
+
+
+// ************************************************************************* //

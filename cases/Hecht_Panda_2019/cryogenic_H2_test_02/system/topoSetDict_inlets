@@ -1,0 +1,78 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+radius_fuel    6e-3; //9e-3, radius of vent hole, m                 
+hole_width     5e-3; //width of the hole, m
+radius_air     #calc "$radius_fuel+$hole_width";  //start radius of inlet air, m
+radius         450e-3;  //total radius, m
+halfWedgeAngle 2.5; //degree
+
+//wedge coordinates:
+hAR        #calc "degToRad($halfWedgeAngle)";    //half angle in rad
+fuel_xmax  #calc "$radius_fuel*cos($hAR)";       //xmax for inlet fuel
+fuel_ymax  #calc "$radius_fuel*sin($hAR)";       //ymax for inlet fuel
+fuel_ymin  #calc "-$fuel_ymax";                  //ymin for inlet fuel
+/*                                                 
+air_xmin   #calc "$radius_air*cos($hAR)";        //xmin for inlet air
+air_xmax   #calc "$radius*cos($hAR)";            //xmax for inlet air
+air_ymax   #calc "$radius*sin($hAR)";            //ymax for inlet air
+air_ymin   #calc "-$air_ymax";                   //ymin for inlet air
+*/
+actions
+(
+//create inlet_fuel
+    {
+        name    inlet_fuel;
+        type    faceSet;
+        action  new;
+        source  patchToFace;
+        sourceInfo
+            {
+                patch inlet;
+            }
+    }
+    {
+        name    inlet_fuel;
+        type    faceSet;
+        action  subset;
+        source  boxToFace;
+        sourceInfo
+            {
+                box (0 $fuel_ymin 0) ($fuel_xmax $fuel_ymax 0);
+            }
+    }
+//create inlet_air
+    {
+        name    inlet_air;
+        type    faceSet;
+        action  new;
+        source  patchToFace;
+        sourceInfo
+            {
+                patch inlet;
+            }
+    }
+    {
+        name    inlet_air;
+        type    faceSet;
+        action  subtract;
+        source  faceToFace;
+        set     inlet_fuel; 
+    }
+);
+
+
+// ************************************************************************* //

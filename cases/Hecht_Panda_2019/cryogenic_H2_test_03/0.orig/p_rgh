@@ -1,0 +1,54 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p_rgh;
+}
+// p_rgh = p - rho*g*h  (modified pressure for buoyant solver)
+
+dimensions      [1 -1 -2 0 0 0 0];
+
+internalField   uniform 101325;
+
+boundaryField
+{
+    inlet_air
+    {
+        type            fixedFluxPressure;
+        value           $internalField;
+    }
+    wallPipe
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    internalWalls
+    {
+        type            fixedFluxPressure;
+        value           $internalField;
+    }
+    inlet_fuel
+    {
+        type            fixedFluxPressure;
+        value           $internalField;
+    }
+    outlet
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+}
+
+// ************************************************************************* //

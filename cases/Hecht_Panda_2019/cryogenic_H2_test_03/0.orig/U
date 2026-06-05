@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// Test 1: U_nn = 535.3 m/s (Giannissi 2021, Table 1). Direction: +z (upward).
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    inlet_air
+    {
+        type            fixedValue;
+        value           uniform (0 0 0.3);
+    }
+    wallPipe
+    {
+        type            pressureInletOutletVelocity;
+        inletValue      uniform (0 0 0);
+        value           uniform (0 0 0);
+    }
+    internalWalls
+    {
+        type            noSlip;
+    }
+    inlet_fuel
+    {
+        // Notional nozzle: pure H2 axial jet. Update U_nn per test condition.
+        type            fixedValue;
+        value           uniform (0 0 535.3);
+    }
+    outlet
+    {
+        type            pressureInletOutletVelocity;
+        inletValue      uniform (0 0 0);
+        value           uniform (0 0 0);
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+}
+
+// ************************************************************************* //

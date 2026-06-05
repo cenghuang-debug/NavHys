@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "meshParameters"
+
+// Box to isolate the nozzle exit face (z = z_stub, r < radius_fuel).
+// After subsetMesh, these 2 faces are part of internalWalls.
+// xMax = radius_fuel * 1.2 to capture face centres at ~0.125 mm and ~0.375 mm
+// while excluding the annular-hole inner wall (starts at radius_fuel = 0.5 mm).
+zStubMin  #calc "$z_stub - 5e-5";
+zStubMax  #calc "$z_stub + 5e-5";
+fuelXMax  #calc "$radius_fuel * 1.2";
+
+actions
+(
+    // --- inlet_fuel ---
+    // After subsetMesh, the nozzle exit face (z = z_stub, r < radius_fuel) is part
+    // of internalWalls. Extract those 2 faces by boxing around z = z_stub.
+    {
+        name    inlet_fuel;
+        type    faceSet;
+        action  new;
+        source  patchToFace;
+        sourceInfo
+        {
+            patch internalWalls;
+        }
+    }
+    {
+        name    inlet_fuel;
+        type    faceSet;
+        action  subset;
+        source  boxToFace;
+        sourceInfo
+        {
+            box (0 -1e-3 $zStubMin) ($fuelXMax 1e-3 $zStubMax);
+        }
+    }
+    // --- inlet_air ---
+    // After subsetMesh the blockMesh 'inlet' patch retains 61 faces (the bottom
+    // plate outside the cut-out region). createPatch will rename it to inlet_air.
+    {
+        name    inlet_air;
+        type    faceSet;
+        action  new;
+        source  patchToFace;
+        sourceInfo
+        {
+            patch inlet;
+        }
+    }
+);
+
+
+// ************************************************************************* //

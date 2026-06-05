@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+radius_fuel    6e-3; //9e-3, radius of vent hole, m                 
+hole_width     5e-3; //width of the hole, m
+halfWedgeAngle 2.5; //degree
+
+//wedge coordinates:
+hAR        #calc "degToRad($halfWedgeAngle)";    //half angle in rad
+fuel_xmax  #calc "$radius_fuel*cos($hAR)";       //xmax for inlet fuel
+fuel_ymax  #calc "$radius_fuel*sin($hAR)";       //ymax for inlet fuel
+fuel_ymin  #calc "-$fuel_ymax";                  //ymin for inlet fuel
+                                                 
+actions
+(
+//create inlet
+    {
+        name    inlet;
+        type    faceSet;
+        action  new;
+        source  patchToFace;
+        sourceInfo
+            {
+                patch inlet;
+            }
+    }
+    {
+        name    inlet;
+        type    faceSet;
+        action  subset;
+        source  boxToFace;
+        sourceInfo
+            {
+                box (0 $fuel_ymin 0) ($fuel_xmax $fuel_ymax 0);
+            }
+    }
+);
+
+
+// ************************************************************************* //

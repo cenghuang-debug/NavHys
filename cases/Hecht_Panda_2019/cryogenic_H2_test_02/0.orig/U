@@ -1,0 +1,54 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Test 1: unchoked, T0=58K, P0=2bar. Notional nozzle = physical nozzle exit.
+// U_nn = 535.3 m/s (Giannissi 2021, Table 1, Approach 2). Direction: +z (upward).
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    nozzleInlet
+    {
+        type            fixedValue;
+        value           uniform (0 0 535.3);
+    }
+    nozzleWall
+    {
+        type            noSlip;
+    }
+    bottomWall
+    {
+        type            noSlip;
+    }
+    outlet
+    {
+        type            pressureInletOutletVelocity;
+        inletValue      uniform (0 0 0);
+        value           uniform (0 0 0);
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+    axis
+    {
+        type            symmetry;
+    }
+}
+
+// ************************************************************************* //

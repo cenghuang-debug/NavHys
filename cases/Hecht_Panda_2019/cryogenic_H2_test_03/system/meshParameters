@@ -1,0 +1,15 @@
+// meshParameters — shared geometry for Hecht & Panda 2019, case 03
+// Include in system dictionaries with:  #include "meshParameters"
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// ─── Primary parameters (edit here only) ─────────────────────────────────────
+D_nozzle        1.0e-3;     // nozzle inner diameter [m]
+radius_fuel     #calc "$D_nozzle / 2.0";  // nozzle inner radius [m]
+hole_width      5e-4;       // nozzle tube wall thickness / hole annular width [m]
+hole_length     5e-4;       // hole length [m]
+z_stub          2.0e-3;     // nozzle stub height above ground [m]
+radius          50e-3;      // domain outer radius [m]
+length          140e-3;     // domain height [m]
+halfWedgeAngle  2.5;        // wedge half-angle [deg]
+
+// ************************************************************************* //

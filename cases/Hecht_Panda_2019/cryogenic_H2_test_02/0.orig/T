@@ -1,0 +1,54 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Test 1: T_nn = 43.9 K (throat temperature, unchoked: Approach 1 = Approach 2).
+// Ambient domain: 293.15 K.
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform 293.15;
+
+boundaryField
+{
+    nozzleInlet
+    {
+        type            fixedValue;
+        value           uniform 43.9;
+    }
+    nozzleWall
+    {
+        type            zeroGradient;
+    }
+    bottomWall
+    {
+        type            zeroGradient;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform 293.15;
+        value           uniform 293.15;
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+    axis
+    {
+        type            symmetry;
+    }
+}
+
+// ************************************************************************* //

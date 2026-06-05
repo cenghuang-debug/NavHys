@@ -1,0 +1,245 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// 2D axisymmetric wedge — Hecht & Panda 2019
+// Jet axis: +z (upward).  Wedge half-angle: 2.5 deg.
+//
+// Geometry:
+//   Nozzle channel : r = 0..r_nozzle,  z = z_tube..0   (1 block)
+//   Main domain    : r = 0..r_outer,   z = 0..z_far    (6 blocks, 3r x 2z)
+//
+// To change nozzle diameter: edit D_nozzle only.
+// n_r_n and n_z_tube recalculate automatically via #calc.
+//
+// Radial zones : [0..r_n]   [r_n..r_r=5mm]   [r_r..r_o=100mm]
+// Axial zones  : [0..z_1=20mm]   [z_1..z_far=140mm]
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale   1;
+
+// ─── PRIMARY PARAMETER ────────────────────────────────────────────────────────
+//   D_nozzle [mm]:  1.0 (Test 1)   1.25 (Test 2)   1.5 (Test 3)
+D_nozzle        1.0e-3;             // [m] nozzle exit diameter
+
+// ─── DERIVED GEOMETRY ─────────────────────────────────────────────────────────
+r_nozzle    #calc "$D_nozzle / 2.0";
+L_tube      #calc "5.0 * $D_nozzle";   // nozzle channel length = 5D (below z=0)
+z_tube      #calc "-$L_tube";           // z-coordinate of nozzleInlet face
+
+r_inner     5.0e-3;     // [m] inner refinement boundary (fixed)
+r_outer     100.0e-3;   // [m] domain outer radius
+z_near      20.0e-3;    // [m] near/far-field axial split
+z_far       140.0e-3;   // [m] domain height
+
+halfWedgeAngle  2.5;    // [deg]
+hAR         #calc "degToRad($halfWedgeAngle)";
+
+rn_x    #calc "$r_nozzle * cos($hAR)";
+rn_yp   #calc "$r_nozzle * sin($hAR)";
+rn_yn   #calc "-$rn_yp";
+
+rr_x    #calc "$r_inner * cos($hAR)";
+rr_yp   #calc "$r_inner * sin($hAR)";
+rr_yn   #calc "-$rr_yp";
+
+ro_x    #calc "$r_outer * cos($hAR)";
+ro_yp   #calc "$r_outer * sin($hAR)";
+ro_yn   #calc "-$ro_yp";
+
+// ─── CELL COUNTS ──────────────────────────────────────────────────────────────
+// n_r_n and n_z_tube scale with D_nozzle automatically:
+//   D=1.0mm  → n_r_n=5,  n_z_tube=25
+//   D=1.25mm → n_r_n=6,  n_z_tube=31
+//   D=1.5mm  → n_r_n=8,  n_z_tube=38
+cellSize_r_n    0.1e-3;     // target radial cell in nozzle core [m]
+cellSize_z_t    0.2e-3;     // target axial cell in nozzle tube  [m]
+
+n_r_n   #calc "(int)std::round($r_nozzle / $cellSize_r_n)";
+n_z_tube #calc "(int)std::round($L_tube  / $cellSize_z_t)";
+
+n_r_r   18;     // inner jet:   r_n..5mm,    ~0.1→0.5mm
+n_r_o   55;     // outer zone:  5..100mm,    ~0.5→4mm
+n_z_1   100;    // near field:  0..20mm,     0.2mm uniform
+n_z_2   120;    // far field:   20..140mm,   0.2→1mm graded
+
+g_r_r   5;      // radial grading inner jet  (coarsen outward)
+g_r_o   8;      // radial grading outer zone (coarsen outward)
+g_z_2   5;      // axial grading far field   (coarsen upward)
+
+// ─── VERTICES ─────────────────────────────────────────────────────────────────
+// Vertex index layout:
+//   z_tube level [0..2] : axis, rn_front, rn_back
+//   z=0    level [3..9] : axis, rn_front, rn_back, rr_front, rr_back, ro_front, ro_back
+//   z_near level [10..16]: same radial ordering
+//   z_far  level [17..23]: same radial ordering
+
+vertices
+(
+// ── z = z_tube (nozzle inlet plane) ──
+    (0       0       $z_tube)           // 0   axis
+    ($rn_x  $rn_yn  $z_tube)           // 1   r_nozzle, front
+    ($rn_x  $rn_yp  $z_tube)           // 2   r_nozzle, back
+
+// ── z = 0 (nozzle exit / domain bottom) ──
+    (0       0       0)                 // 3   axis
+    ($rn_x  $rn_yn  0)                 // 4   r_nozzle, front
+    ($rn_x  $rn_yp  0)                 // 5   r_nozzle, back
+    ($rr_x  $rr_yn  0)                 // 6   r_inner,  front
+    ($rr_x  $rr_yp  0)                 // 7   r_inner,  back
+    ($ro_x  $ro_yn  0)                 // 8   r_outer,  front
+    ($ro_x  $ro_yp  0)                 // 9   r_outer,  back
+
+// ── z = z_near (20 mm) ──
+    (0       0       $z_near)           // 10  axis
+    ($rn_x  $rn_yn  $z_near)           // 11  r_nozzle, front
+    ($rn_x  $rn_yp  $z_near)           // 12  r_nozzle, back
+    ($rr_x  $rr_yn  $z_near)           // 13  r_inner,  front
+    ($rr_x  $rr_yp  $z_near)           // 14  r_inner,  back
+    ($ro_x  $ro_yn  $z_near)           // 15  r_outer,  front
+    ($ro_x  $ro_yp  $z_near)           // 16  r_outer,  back
+
+// ── z = z_far (140 mm) ──
+    (0       0       $z_far)            // 17  axis
+    ($rn_x  $rn_yn  $z_far)            // 18  r_nozzle, front
+    ($rn_x  $rn_yp  $z_far)            // 19  r_nozzle, back
+    ($rr_x  $rr_yn  $z_far)            // 20  r_inner,  front
+    ($rr_x  $rr_yp  $z_far)            // 21  r_inner,  back
+    ($ro_x  $ro_yn  $z_far)            // 22  r_outer,  front
+    ($ro_x  $ro_yp  $z_far)            // 23  r_outer,  back
+);
+
+// ─── BLOCKS ───────────────────────────────────────────────────────────────────
+blocks
+(
+    // Block 0: nozzle channel   [r=0..r_n,  z=z_tube..0]
+    hex (0 1 2 0  3 4 5 3)
+        ($n_r_n 1 $n_z_tube) simpleGrading (1 1 1)
+
+    // Block 1: nozzle core, near field   [r=0..r_n,  z=0..z_near]
+    hex (3 4 5 3  10 11 12 10)
+        ($n_r_n 1 $n_z_1) simpleGrading (1 1 1)
+
+    // Block 2: inner jet, near field     [r=r_n..r_r, z=0..z_near]
+    hex (4 6 7 5  11 13 14 12)
+        ($n_r_r 1 $n_z_1) simpleGrading ($g_r_r 1 1)
+
+    // Block 3: outer zone, near field    [r=r_r..r_o, z=0..z_near]
+    hex (6 8 9 7  13 15 16 14)
+        ($n_r_o 1 $n_z_1) simpleGrading ($g_r_o 1 1)
+
+    // Block 4: nozzle core, far field    [r=0..r_n,  z=z_near..z_far]
+    hex (10 11 12 10  17 18 19 17)
+        ($n_r_n 1 $n_z_2) simpleGrading (1 1 $g_z_2)
+
+    // Block 5: inner jet, far field      [r=r_n..r_r, z=z_near..z_far]
+    hex (11 13 14 12  18 20 21 19)
+        ($n_r_r 1 $n_z_2) simpleGrading ($g_r_r 1 $g_z_2)
+
+    // Block 6: outer zone, far field     [r=r_r..r_o, z=z_near..z_far]
+    hex (13 15 16 14  20 22 23 21)
+        ($n_r_o 1 $n_z_2) simpleGrading ($g_r_o 1 $g_z_2)
+);
+
+edges ();
+
+// ─── BOUNDARY ─────────────────────────────────────────────────────────────────
+boundary
+(
+    nozzleInlet
+    {
+        type patch;
+        faces
+        (
+            (0 2 1 0)       // Block 0 bottom: nozzle inlet, r=0..r_n, z=z_tube
+        );
+    }
+
+    nozzleWall
+    {
+        type wall;
+        faces
+        (
+            (1 2 5 4)       // Block 0 outer: nozzle tube wall, r=r_n, z=z_tube..0
+        );
+    }
+
+    bottomWall
+    {
+        type wall;
+        faces
+        (
+            (4 5 7 6)       // Block 2 bottom: plate, r=r_n..r_r, z=0
+            (6 7 9 8)       // Block 3 bottom: plate, r=r_r..r_o, z=0
+        );
+    }
+
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (17 19 18 17)   // Block 4 top (degenerate): z=z_far, r=0..r_n
+            (18 19 21 20)   // Block 5 top: z=z_far, r=r_n..r_r
+            (20 21 23 22)   // Block 6 top: z=z_far, r=r_r..r_o
+            (8 9 16 15)     // Block 3 side: r=r_o, z=0..z_near
+            (15 16 23 22)   // Block 6 side: r=r_o, z=z_near..z_far
+        );
+    }
+
+    front
+    {
+        type wedge;
+        faces
+        (
+            (0 1 4 3)       // Block 0
+            (3 4 11 10)     // Block 1
+            (4 6 13 11)     // Block 2
+            (6 8 15 13)     // Block 3
+            (10 11 18 17)   // Block 4
+            (11 13 20 18)   // Block 5
+            (13 15 22 20)   // Block 6
+        );
+    }
+
+    back
+    {
+        type wedge;
+        faces
+        (
+            (0 3 5 2)       // Block 0
+            (3 10 12 5)     // Block 1
+            (5 12 14 7)     // Block 2
+            (7 14 16 9)     // Block 3
+            (10 17 19 12)   // Block 4
+            (12 19 21 14)   // Block 5
+            (14 21 23 16)   // Block 6
+        );
+    }
+
+    axis
+    {
+        type symmetry;
+        faces
+        (
+            (0 3 3 0)       // Block 0 axis: nozzle channel
+            (3 10 10 3)     // Block 1 axis: near field
+            (10 17 17 10)   // Block 4 axis: far field
+        );
+    }
+);
+
+mergePatchPairs ();
+
+// ************************************************************************* //

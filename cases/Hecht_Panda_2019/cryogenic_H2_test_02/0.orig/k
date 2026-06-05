@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      k;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// Inlet: effectively zero turbulence per Giannissi (2021).
+// Internal: small ambient value (k = 1.5*(0.01*U_ref)^2, U_ref~0.3 m/s).
+
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   uniform 1.5e-4;
+
+boundaryField
+{
+    nozzleInlet
+    {
+        type            fixedValue;
+        value           uniform 1e-6;
+    }
+    nozzleWall
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+    bottomWall
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      $internalField;
+        value           $internalField;
+    }
+    "(front|back)"
+    {
+        type            wedge;
+    }
+    axis
+    {
+        type            symmetry;
+    }
+}
+
+// ************************************************************************* //

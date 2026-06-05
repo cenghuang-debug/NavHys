@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#cd ${0%/*} || exit 1                        # Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
+
+blockMesh > log.blockMesh & wait 
+topoSet -dict system/topoSetDict_new_domain > log.topoSetDict_new_domain & wait 
+subsetMesh -overwrite new_domain -patch internalWalls > log.subsetMesh & wait
+topoSet -dict system/topoSetDict_inlets > log.topoSetDict_inlets & wait
+createPatch -overwrite > log.createPatch & wait
+echo "sed 50"
+sed -i '50s/empty/wall/' constant/polyMesh/boundary 
+echo "sed 51"
+sed -i '51s/empty/wall/' constant/polyMesh/boundary 
+echo "cp "
+cp -r 0.orig/ 0/
+echo "checkMesh"
+checkMesh > log.checkMesh & wait 
+renumberMesh -overwrite > log.renumberMesh & wait
+potentialFoam > log.potentialFoam & wait
+#runApplication reactingFoam
+
+#------------------------------------------------------------------------------

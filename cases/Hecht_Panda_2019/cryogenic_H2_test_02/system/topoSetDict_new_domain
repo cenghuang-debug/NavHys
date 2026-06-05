@@ -1,0 +1,50 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+hole_depth  5e-3; // m
+hole_width  5e-3; // m
+radius_fuel 6e-3; //9e-3,radius of vent hole, m                 
+halfWedgeAngle 2.5; //degree
+
+//wedge coordinates:
+hAR        #calc "degToRad($halfWedgeAngle)";    //half angle in rad
+hole_xmin  #calc "$radius_fuel*cos($hAR)";             //xmin for hole
+hole_xmax  #calc "($radius_fuel+$hole_width)*cos($hAR)";     //xmax for hole
+hole_ymax  #calc "$radius_fuel*sin($hAR)";             //ymax for hole
+hole_ymin  #calc "-$hole_ymax";                  //ymin for hole
+
+actions
+(
+//create new domain by removing cells
+    {
+        name    new_domain;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        sourceInfo
+            {
+                box ($hole_xmin $hole_ymin 0)($hole_xmax $hole_ymax $hole_depth); //domain to be removed
+            }
+    }
+    {
+        name    new_domain;
+        type    cellSet;
+        action  invert;
+    }
+);
+
+
+// ************************************************************************* //

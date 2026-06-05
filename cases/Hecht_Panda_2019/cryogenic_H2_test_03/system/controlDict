@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     rhoReactingBuoyantFoam;
+
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         0.001;           // ~190 jet flow-through times (L/U = 0.26 ms)
+
+deltaT          1e-7;           // initial step; Co<0.5 limits to ~9e-8 s near inlet
+
+writeControl    adjustableRunTime;
+writeInterval   0.001;           // 5 write times
+purgeWrite      0;
+
+writeFormat     binary;
+writePrecision  6;
+writeCompression off;
+
+timeFormat      general;
+timePrecision   6;
+
+runTimeModifiable true;
+adjustTimeStep  yes;
+maxCo           0.5;            // critical for near-inlet supersonic-ish flow
+
+functions
+{
+    #includeFunc  singleGraph_z
+    #includeFunc  singleGraph_r10
+    #includeFunc  singleGraph_r20
+    #includeFunc  singleGraph_r30
+    #includeFunc  singleGraph_r40
+}
+
+libs
+(
+    "libmyReactionThermophysicalModels.so"
+);
+
+// ************************************************************************* //

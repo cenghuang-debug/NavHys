@@ -1,0 +1,162 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale 1; 
+
+//define parameters for fast change of mesh 
+radius 300e-3; 
+length 1200e-3;
+halfWedgeAngle 2.5;  //degree
+dx_coarse      1.0e-3; //coarse grid size in x-dir
+dz_coarse      1.0e-3; //coarse grid size in z-dir                      
+dx_fine        0.5e-3; //fine grid size in x-dir
+dz_fine        0.5e-3; //find grid size in z-dir                      
+
+xRefine  20e-3; // x-boundary of refined region 
+zRefine 200e-3; // z-boundary of refined region
+
+//wedge coordinates: 
+hAR       #calc  "degToRad($halfWedgeAngle)";    // half angle in rad
+wx        #calc "$radius*cos($hAR)";
+wyp       #calc "$radius*sin($hAR)";
+wyn       #calc "-1.0*$wyp";
+cs        #calc "cos($hAR)";
+
+// Coordinates for refined region 
+wxRefine  #calc "$xRefine*cos($hAR)"; 
+wypRefine #calc "$xRefine*sin($hAR)"; 
+wynRefine #calc "-1.0*$wypRefine";
+
+// Number of cells in each direction 
+n_x_fine   #calc "round($xRefine/$dx_fine)"; 
+n_x_coarse #calc "round(($radius - $xRefine)/$dx_coarse)"; 
+n_z_fine   #calc "round($zRefine/$dz_fine)"; 
+n_z_coarse #calc "round(($length - $zRefine)/$dz_coarse)";
+
+// Grading factors (approximate geometric progression) 
+grading_x #calc "($dx_coarse/$dx_fine)"; 
+grading_z #calc "($dz_coarse/$dz_fine)";
+
+vertices
+(
+    (0 0 0)            //0 
+    (0 0 $zRefine)     //1
+    (0 0 $length)      //2
+
+    // Refined region vertices 
+    ($wxRefine $wynRefine 0)        // 3
+    ($wxRefine $wypRefine 0)        // 4
+    ($wxRefine $wynRefine $zRefine) // 5
+    ($wxRefine $wypRefine $zRefine) // 6
+    ($wxRefine $wynRefine $length)  // 7
+    ($wxRefine $wypRefine $length)  // 8
+
+     // Outer boundary vertices 
+    ($wx $wyn 0)        // 9
+    ($wx $wyp 0)        // 10
+    ($wx $wyn $zRefine) // 11
+    ($wx $wyp $zRefine) // 12
+    ($wx $wyn $length)  // 13
+    ($wx $wyp $length)  // 14
+);
+
+blocks
+(
+// Block 1: Refined region  
+    hex (0 3 4 0 1 5 6 1) ($n_x_fine 1 $n_z_fine) simpleGrading (1 1 1)
+
+// Block 2: Above refined region
+    hex (1 5 6 1 2 7 8 2) ($n_x_fine 1 $n_z_coarse) simpleGrading (1 1 $grading_z)
+
+// Block 3: Adjacent in x
+    hex (3 9 10 4 5 11 12 6) ($n_x_coarse 1 $n_z_fine) simpleGrading ($grading_x 1 1)
+
+// Block 4: Remaining region
+    hex (5 11 12 6 7 13 14 8) ($n_x_coarse 1 $n_z_coarse) simpleGrading ($grading_x 1 $grading_z)
+
+);
+
+edges
+(
+);
+
+boundary
+(
+    inlet 
+    {
+        type patch; 
+        faces 
+        ( 
+            (0 4 3 0)
+            (4 10 9 3)
+        );
+    } 
+    outlet 
+    {
+        type patch; 
+        faces
+        (
+            (2 8 7 2) 
+            (8 14 13 7)
+        );
+    } 
+    wallPipe 
+    {
+        type wall; 
+        faces 
+        (
+            (9 11 12 10)
+            (11 13 14 12) 
+        ); 
+    } 
+    front 
+    { 
+        type wedge; 
+        faces 
+        (
+            (0 3 5 1) // Block 1, 
+            (1 5 7 2) // Block 2, 
+            (3 9 11 5) // Block 3, 
+            (5 11 13 7) // Block 4, 
+        ); 
+    } 
+    back 
+    { 
+        type wedge; 
+        faces 
+        ( 
+            (0 1 6 4) // Block 1, 
+            (1 2 8 6) // Block 2, 
+            (4 6 12 10) // Block 3, 
+            (6 8 14 12) // Block 4, 
+        ); 
+    } 
+    axis 
+    { 
+        type symmetry; 
+        faces 
+        ( 
+            (0 1 1 0) // Block 1, 
+            (1 2 2 1) // Block 2, 
+        ); 
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //

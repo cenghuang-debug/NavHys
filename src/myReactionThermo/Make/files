@@ -1,0 +1,5 @@
+myPsiReactionThermo/myPsiReactionThermo.C
+myPsiReactionThermo/myPsiReactionThermos.C
+myRhoReactionThermo/myRhoReactionThermos.C
+
+LIB = $(FOAM_USER_LIBBIN)/libmyReactionThermophysicalModels

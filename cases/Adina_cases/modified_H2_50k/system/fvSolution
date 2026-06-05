@@ -1,0 +1,91 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "rho.*"
+    {
+        solver          diagonal;
+    }
+
+    p
+    {
+        solver           PCG;
+        preconditioner   DIC;
+        tolerance        1e-6;
+        relTol           0.01;
+    }
+
+    pFinal
+    {
+        $p;
+        relTol           0;
+    }
+
+    "(U|h|k|epsilon|omega)"
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-6;
+        relTol          0.01;
+    }
+
+    "(U|h|k|epsilon|omega)Final"
+    {
+        $U;
+        relTol          0;
+    }
+
+	ph_rgh
+    {
+        $p_rgh;
+    }
+	
+    Yi
+    {
+        $hFinal;
+    }
+
+    Phi
+    {
+        $p;
+    }
+}
+
+PIMPLE
+{
+    momentumPredictor off;
+    nOuterCorrectors 1;
+    nCorrectors     2;
+    nNonOrthogonalCorrectors 0; 
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors 1; //10;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        "(p|p_rgh|ph_rgh).*"                   0.5;
+        "(U|k|epsilon).*"                      0.7;
+        "(2|O2|H2O|air|h).*"       			   0.7;
+    }
+}
+// ************************************************************************* //
