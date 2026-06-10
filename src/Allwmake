@@ -1,0 +1,7 @@
+#!/bin/sh
+# Compile user thermophysical libraries in dependency order.
+# Run from NavHys/src/ after sourcing OpenFOAM v2406.
+cd "${0%/*}" || exit 1
+
+wmake myBasic        || { echo "myBasic failed"; exit 1; }
+wmake myReactionThermo || { echo "myReactionThermo failed"; exit 1; }

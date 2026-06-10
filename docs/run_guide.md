@@ -14,34 +14,39 @@
 
 ---
 
-## Step 1: Compile the User Thermophysical Library
+## Step 1: Compile the User Thermophysical Libraries
 
-The case requires a user library that registers the `hPolynomial + perfectGas + multiComponentMixture` combination in OpenFOAM's `rhoReactionThermo` factory table. This is needed because OpenFOAM v2406 does not ship this combination by default.
+Two libraries are required and must be compiled in order. Both live in `NavHys/src/` — the repo is self-contained.
 
-**Library source:**
-```
-$WM_PROJECT_DIR/../src/myThermophysicalModels/myReactionThermo/
-```
-
-The exact path on this installation:
-```
-/home/chenhu/OpenFOAM/chenhu-v2406/src/myThermophysicalModels/myReactionThermo/
-```
-
-**Compile:**
+**Option A — compile both at once (recommended):**
 ```bash
-cd /home/chenhu/OpenFOAM/chenhu-v2406/src/myThermophysicalModels/myReactionThermo
+cd <path-to-NavHys>/src
+./Allwmake
+```
+
+**Option B — compile individually:**
+```bash
+# 1. Base psi-thermo layer (myBasic must come first)
+cd <path-to-NavHys>/src/myBasic
+wmake
+
+# 2. Reaction thermo registration (depends on myBasic)
+cd <path-to-NavHys>/src/myReactionThermo
 wmake
 ```
 
-**Expected output:** `$FOAM_USER_LIBBIN/libmyReactionThermophysicalModels.so`
+**Expected outputs:**
+```
+$FOAM_USER_LIBBIN/libmyFluidThermophysicalModels.so    ← from myBasic
+$FOAM_USER_LIBBIN/libmyReactionThermophysicalModels.so ← from myReactionThermo
+```
 
 To verify:
 ```bash
-ls $FOAM_USER_LIBBIN/libmyReactionThermophysicalModels.so
+ls $FOAM_USER_LIBBIN/libmy*.so
 ```
 
-The compiled library registers:
+`libmyReactionThermophysicalModels.so` registers:
 ```
 heRhoThermo<
   multiComponentMixture<
@@ -51,9 +56,11 @@ heRhoThermo<
 ```
 in both `rhoThermo` and `rhoReactionThermo` factory tables via `makeReactionThermos`.
 
-**If recompilation is needed** (after editing `myRhoReactionThermos.C`):
+**If recompilation is needed:**
 ```bash
-wclean && wmake
+cd <path-to-NavHys>/src
+wclean myBasic && wclean myReactionThermo
+./Allwmake
 ```
 
 ---
